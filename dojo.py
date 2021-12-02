@@ -1,6 +1,7 @@
 from td_net import TD_Net
 import numpy as np
 import torch
+from torch.utils.data import DataLoader
 # import backgammon game
 
 
@@ -16,7 +17,7 @@ class FakeGame():
 
     def valid_actions(self):
         return ['({},{}) ({},{})'.format(i, i + 2, j, j + 4)
-                for i in [3, 6, 9, 12] for j in [14, 16, 18]]
+                for i in [3, 6, 9] for j in [14, 16, 18]]
 
     def switch_cp(self):
         self.cp = (self.cp + 1) % 2
@@ -35,16 +36,16 @@ class FakeGame():
         return np.random.randint(0, 5, (2, 26))
 
 
-def eval_pred(Y):
-    # Y state represents [p_win_gammon, p_win, p_lose, p_los_gammon]
-    return 2 * Y[0] + Y[1] - Y[2] - 2 * Y[3]
-
-
 def best_action(game, model):
     # use mode to compute best move according to learned policy
     with torch.no_grad():
-        move = game.valid_actions()[np.argmax([eval_pred(np.array(model.forward(torch.Tensor(game.simulate_single_move(move).reshape(-1)))))
-                                               for move in game.valid_actions()])]
+        legal_moves = game.valid_actions()
+        result_states = [torch.tensor(game.simulate_single_move(
+            move)).reshape(-1).type(torch.FloatTensor)
+            for move in legal_moves]
+        state_loader = DataLoader(result_states, batch_size=4)
+        move = legal_moves[torch.argmax(
+            model.get_predicted_move_vals(state_loader))]
     return move
 
 

@@ -43,6 +43,15 @@ class TD_Net(nn.Module):
         loss.backward()
         self.optimizer.step()
 
+    def get_predicted_move_vals(self, state_data_loader):
+        batch_size = state_data_loader.batch_size
+        values = torch.zeros(len(state_data_loader.dataset))
+        for i, state in enumerate(state_data_loader):
+            pred = self.forward(state)
+            val = torch.tensor([2,1,-1,-2], dtype=torch.float) @ pred.type(torch.FloatTensor).T
+            values[i * batch_size : i * batch_size + len(state)] = val
+        return values
+
     def zero_grad(self):
         '''
         Resets gradient of optimizer. This should be used when beginning a new
