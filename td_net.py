@@ -35,6 +35,10 @@ class TD_Net(nn.Module):
         return F.softmax(self.w2(x), dim=-1)
 
     def train_single_example(self, start_state, next_state):
+        '''
+        This function should be used once a move has been taken by the player in
+        the game
+        '''
         y_0 = self.forward(start_state)
         with torch.no_grad():
             y_1 = self.forward(next_state)
@@ -42,14 +46,28 @@ class TD_Net(nn.Module):
         loss = self.loss(y_0, y_1)
         loss.backward()
         self.optimizer.step()
+        return loss
+    
+    def train_final_example(self, start_state, final_state_value):
+        '''
+        This function should be used once a move has been taken by the player in
+        the game
+        '''
+        y_0 = self.forward(start_state)
+
+        loss = self.loss(y_0, final_state_value)
+        loss.backward()
+        self.optimizer.step()
+        return loss
 
     def get_predicted_move_vals(self, state_data_loader):
         batch_size = state_data_loader.batch_size
         values = torch.zeros(len(state_data_loader.dataset))
         for i, state in enumerate(state_data_loader):
             pred = self.forward(state)
-            val = torch.tensor([2,1,-1,-2], dtype=torch.float) @ pred.type(torch.FloatTensor).T
-            values[i * batch_size : i * batch_size + len(state)] = val
+            val = torch.tensor(
+                [2, 1, -1, -2], dtype=torch.float) @ pred.type(torch.FloatTensor).T
+            values[i * batch_size: i * batch_size + len(state)] = val
         return values
 
     def zero_grad(self):
