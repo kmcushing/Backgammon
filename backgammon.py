@@ -270,12 +270,17 @@ class Backgammon():
             else:
                 if (move.source() == -1 and move.destination() == -1):
                     return True
-                elif (sum([simul_board.num_checkers_at_index(checker_color, i) for i in range(6)]) + simul_board.born_off(checker_color) == simul_board.total_checkers()):
+                elif ((sum([simul_board.num_checkers_at_index(checker_color, self.board_loc_from_point(checker_color, i)) for i in range(6)]) + simul_board.born_off(checker_color)) == simul_board.total_checkers()):
                     unused_rolls.sort()
+                    move_successful = False
                     for r in unused_rolls:
                         if move.destination() == 0 and (move.source() <= r):
                             unused_rolls.remove(r)
+                            move_successful = True
                             continue
+                    if move_successful:
+                        continue
+                            
                 print("a")
                 return False
             if simul_board.num_checkers_on_bar(checker_color) - entered_from_bar > 0 and not self.is_entering(move):
@@ -382,7 +387,7 @@ class Backgammon():
         curr_player = self._game_state.current_player()
         opp_player = self._game_state.next_player()
         available_checker_points = [point for point in range(1, self._board.board_size(
-        )+1) if self._board.num_checkers_at_index(opp_player.color, self.board_loc_from_point(curr_player.color, point)) < 2]
+        )+1) if self._board.num_checkers_at_index(opp_player.color, self.board_loc_from_point(opp_player.color, point)) < 2]
         # only append if can bear off - will need to update after each sim move
         available_checker_points.append(self._off)
         available_srcs = [point for point in range(1, self._board.board_size(
@@ -397,12 +402,12 @@ class Backgammon():
         possible_bear_offs = []
         simul_board = copy.deepcopy(self._board)
         num_checkers_moved_to_home_base = 0
-        if (sum([self._board.num_checkers_at_index(curr_player.color, i) for i in range(6)]) + self._board.born_off(curr_player.color) + num_checkers_moved_to_home_base == simul_board.total_checkers()):
+        if (sum([self._board.num_checkers_at_index(curr_player.color, self.board_loc_from_point(curr_player.color, i)) for i in range(6)]) + self._board.born_off(curr_player.color) + num_checkers_moved_to_home_base == simul_board.total_checkers()):
             for i in range(-5, 0):
                 available_checker_points.append(i)
         for src1 in available_srcs:
             for dist1 in move_lengths:
-                if (src1 - dist1) in available_checker_points and (src1-dist1) in range(0, self._board.board_size()):
+                if (src1 - dist1) in available_checker_points and (src1-dist1) in range(min(available_checker_points), self._board.board_size()):
                     move1 = Move(curr_player.id, src1, max(src1-dist1, 0))
                     simul_board2 = copy.deepcopy(simul_board)
                     if (self.board_loc_from_point(curr_player.color, move1.source()) == 25):
@@ -419,12 +424,12 @@ class Backgammon():
                     move_lengths2.remove(dist1)
                     if (move1.destination() <= 6 and move1.source() > 6):
                         num_checkers_moved_to_home_base += 1
-                    if (sum([self._board.num_checkers_at_index(curr_player.color, i) for i in range(6)]) + self._board.born_off(curr_player.color) + num_checkers_moved_to_home_base == simul_board.total_checkers()):
+                    if (sum([self._board.num_checkers_at_index(curr_player.color, self.board_loc_from_point(curr_player.color, i)) for i in range(6)]) + self._board.born_off(curr_player.color) + num_checkers_moved_to_home_base == simul_board.total_checkers()):
                         for i in range(-5, 0):
                             available_checker_points.append(i)
                     for src2 in available_srcs2:
                         for dist2 in move_lengths2:
-                            if (src2 - dist2) in available_checker_points and (src2-dist2) in range(0, simul_board.board_size()):
+                            if (src2 - dist2) in available_checker_points and (src2-dist2) in range(min(available_checker_points), simul_board.board_size()):
                                 move2 = Move(curr_player.id, src2,
                                              max(0, src2-dist2))
                                 if (not double_roll):
@@ -444,12 +449,12 @@ class Backgammon():
                                     move_lengths3.remove(dist2)
                                     if (move2.destination() <= 6 and move2.source() > 6):
                                         num_checkers_moved_to_home_base += 1
-                                    if (sum([self._board.num_checkers_at_index(curr_player.color, i) for i in range(6)]) + self._board.born_off(curr_player.color) + num_checkers_moved_to_home_base == simul_board.total_checkers()):
+                                    if (sum([self._board.num_checkers_at_index(curr_player.color, self.board_loc_from_point(curr_player.color, i)) for i in range(6)]) + self._board.born_off(curr_player.color) + num_checkers_moved_to_home_base == simul_board.total_checkers()):
                                         for i in range(-5, 0):
                                             available_checker_points.append(i)
                                     for src3 in available_srcs3:
                                         for dist3 in move_lengths3:
-                                            if (src3 - dist3) in available_checker_points and (src3-dist3) in range(0, simul_board3.board_size()):
+                                            if (src3 - dist3) in available_checker_points and (src3-dist3) in range(min(available_checker_points), simul_board3.board_size()):
                                                 move3 = Move(
                                                     curr_player.id, src3, max(0, src3-dist3))
                                                 simul_board4 = copy.deepcopy(
@@ -468,12 +473,12 @@ class Backgammon():
                                                     dist3)
                                                 if (move3.destination() <= 6 and move3.source() > 6):
                                                     num_checkers_moved_to_home_base += 1
-                                                if (sum([self._board.num_checkers_at_index(curr_player.color, i) for i in range(6)]) + self._board.born_off(curr_player.color) + num_checkers_moved_to_home_base == simul_board.total_checkers()):
+                                                if (sum([self._board.num_checkers_at_index(curr_player.color, self.board_loc_from_point(curr_player.color, i)) for i in range(6)]) + self._board.born_off(curr_player.color) + num_checkers_moved_to_home_base == simul_board.total_checkers()):
                                                     for i in range(-5, 0):
                                                         available_checker_points.append(i)
                                                 for src4 in available_srcs4:
                                                     for dist4 in move_lengths4:
-                                                        if (src4 - dist4) in available_checker_points and (src4-dist4) in range(0, simul_board4.board_size()):
+                                                        if (src4 - dist4) in available_checker_points and (src4-dist4) in range(min(available_checker_points), simul_board4.board_size()):
                                                             move4 = Move(
                                                                 curr_player.id, src4, max(0, src4-dist4))
                                                             possible_turns.append(

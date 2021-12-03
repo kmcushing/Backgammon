@@ -4,49 +4,6 @@ import torch
 from torch.utils.data import DataLoader
 from backgammon import Backgammon, Player
 
-RED = 0
-BLACK = 1
-
-
-class FakeGame():
-    def __init__(self):
-        self.cp = RED
-        self.over = False
-        self.num_moves = 0
-
-    def valid_actions(self):
-        return ['({},{}) ({},{})'.format(i, i + 2, j, j + 4)
-                for i in [3, 6, 9] for j in [14, 16, 18]]
-
-    # encoded_state in Backgammon
-    def state(self):
-        # can return state tensor in order of current player first
-        return np.random.randint(0, 5, (2, 26))
-
-    # make_turn in Backgammon
-    def move(self, move):
-        self.num_moves += 1
-        if self.num_moves == 5:
-            self.over = True
-        self.switch_cp()
-
-    def simulate_single_move(self, move):
-        return np.random.randint(0, 5, (2, 26))
-
-    def is_terminal_state(self, state):
-        return self.num_moves == 4
-
-    def terminal_value(self, state):
-        # rand = np.random.rand()
-        # if rand < .25:
-        #     return [1, 0, 0, 0]
-        # if rand < .5:
-        #     return [0, 1, 0, 0]
-        # if rand < .75:
-        #     return [0, 0, 1, 0]
-        return [0, 0, 0, 1]
-
-
 def best_action(game, state, model):
     # use mode to compute best move according to learned policy
     with torch.no_grad():
@@ -99,12 +56,8 @@ def display_board(game, board):
 
 # init model
 model = TD_Net()
-model.zero_grad()
 
-# init backgammon game
-# game = Backgammon(Player('p1', 'white'), Player('p2', 'black'))
-
-n_games = 5
+n_games = 1
 
 # SARSA alg
 epsilon = 0.01
@@ -114,7 +67,7 @@ output_path = 'data/training_results.csv'
 
 if is_new_output_path:
     f = open(output_path, 'w')
-    f.write("game,avg_loss\n")
+    f.write("game,avg_loss,plys\n")
 else:
     f = open(output_path, 'a')
 
@@ -126,6 +79,7 @@ for i in range(n_games):
     game_loss = 0
     plys = 0
     display_board(game, game.current_board())
+    model.zero_grad()
     while(not game.game_is_over()):
         print("ply: " + str(plys))
         plys += 1
@@ -157,7 +111,7 @@ for i in range(n_games):
         game.make_turn(move)
         s = s_1
 
-    f.write('{},{}\n'.format(i, game_loss/num_moves))
+    f.write('{},{},{}\n'.format(i, game_loss/num_moves, plys))
     state_loader = DataLoader(
         [torch.tensor(game.state()).reshape(-1).type(torch.FloatTensor)], batch_size=4)
     print(model.get_predicted_move_vals(state_loader))
