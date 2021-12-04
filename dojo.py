@@ -55,7 +55,10 @@ def display_board(game, board):
 
 
 # init model
-model = TD_Net()
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+print('Device: {}'.format(device))
+model = TD_Net(device=device)
+print("Model: {}".format(model))
 
 n_games = 1
 
@@ -99,6 +102,8 @@ for i in range(n_games):
         print(out)
 
         s_1 = game.simulate_single_move(s, move)
+        print(s)
+        print(s_1)
         if (game.is_terminal_state(s_1)):
             game_loss += move_weight * model.train_final_example(torch.tensor(
                 s).reshape(-1).type(torch.FloatTensor), torch.tensor(game.terminal_value(s_1)).type(torch.FloatTensor))
@@ -108,16 +113,19 @@ for i in range(n_games):
                 s).reshape(-1).type(torch.FloatTensor), torch.tensor(s_1).reshape(-1).type(torch.FloatTensor))
             num_moves += move_weight
 
+        print(game_loss)
+
         game.make_turn(move)
-        s = s_1
+        s = game.encoded_state()
 
     f.write('{},{},{}\n'.format(i, game_loss/num_moves, plys))
     state_loader = DataLoader(
-        [torch.tensor(game.state()).reshape(-1).type(torch.FloatTensor)], batch_size=4)
+        [torch.tensor(game.encoded_state()).reshape(-1).type(torch.FloatTensor)], batch_size=4)
     print(model.get_predicted_move_vals(state_loader))
+    print(game.terminal_value(s))
 
 f.close()
 
-state_loader = DataLoader(
-    [torch.tensor(game.state()).reshape(-1).type(torch.FloatTensor)], batch_size=4)
-print(model.get_predicted_move_vals(state_loader))
+# state_loader = DataLoader(
+#     [torch.tensor(game.encoded_state()).reshape(-1).type(torch.FloatTensor)], batch_size=4)
+# print(model.get_predicted_move_vals(state_loader))
