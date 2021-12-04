@@ -25,13 +25,14 @@ class TD_Net(nn.Module):
         self.w1 = nn.Linear(input_dim, hidden_dim)
         self.w2 = nn.Linear(hidden_dim, output_dim)
         self.to(device)
+        self.device = device
         self.optimizer = torch.optim.SGD(self.parameters(), lr=alpha,
                                          momentum=lambda_param)
         # loss function in TD-Gammon paper is MAE Loss
         self.loss = nn.L1Loss()
 
     def forward(self, x):
-        x = torch.sigmoid(self.w1(x))
+        x = torch.sigmoid(self.w1(x.to(self.device)))
         return F.softmax(self.w2(x), dim=-1)
 
     def train_single_example(self, start_state, next_state):
@@ -44,21 +45,26 @@ class TD_Net(nn.Module):
             y_1 = self.forward(next_state)
 
         loss = self.loss(y_0, y_1)
+        print(start_state)
+        print(next_state)
+        print(y_0)
+        print(y_1)
         loss.backward()
         self.optimizer.step()
-        return loss
+        print(loss.item())
+        return loss.item()
     
     def train_final_example(self, start_state, final_state_value):
         '''
         This function should be used once a move has been taken by the player in
         the game
         '''
-        y_0 = self.forward(start_state)
+        y_0 = self.forward(start_state.to(self.device))
 
-        loss = self.loss(y_0, final_state_value)
+        loss = self.loss(y_0, final_state_value.to(self.device))
         loss.backward()
         self.optimizer.step()
-        return loss
+        return loss.item()
 
     def get_predicted_move_vals(self, state_data_loader):
         batch_size = state_data_loader.batch_size
@@ -78,15 +84,15 @@ class TD_Net(nn.Module):
         self.optimizer.zero_grad()
 
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-print(device)
-net = TD_Net(device=device)
+# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# print(device)
+# net = TD_Net(device=device)
 
-x_1 = torch.zeros(52, requires_grad=True)
-# not sure if this is necessary
-x_1.to(device)
-x_2 = torch.ones(52, requires_grad=True)
-# not sure this is necessary
-x_2.to(device)
+# x_1 = torch.zeros(52, requires_grad=True)
+# # not sure if this is necessary
+# x_1.to(device)
+# x_2 = torch.ones(52, requires_grad=True)
+# # not sure this is necessary
+# x_2.to(device)
 
-net.train_single_example(x_1, x_2)
+# net.train_single_example(x_1, x_2)
