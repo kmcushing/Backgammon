@@ -60,21 +60,36 @@ print('Device: {}'.format(device))
 model = TD_Net(device=device)
 print("Model: {}".format(model))
 
-n_games = 1
+n_games = 1000
 
-# SARSA alg
-epsilon = 0.01
+# SARSA alg percent of time player explores vs picking optimal move
+epsilon = 0.4
 
+# modify these
 is_new_output_path = True
 output_path = 'data/training_results.csv'
+game_log_format_str = 'data/game_logs/game_{}_log.csv'
+
+is_new_model_path = True
+model_path_format = 'models/td_net_{}_games.pt'
+n_games_trained = 0
+if is_new_model_path:
+    torch.save(model, model_path_format.format(n_games_trained))
+else:
+    model = torch.load(model_path_format.format(n_games_trained)).to(device)
+
 
 if is_new_output_path:
-    f = open(output_path, 'w')
-    f.write("game,avg_loss,plys\n")
+    train_log = open(output_path, 'w')
+    train_log.write("game,avg_loss,final_state_loss,plys\n")
 else:
-    f = open(output_path, 'a')
+    train_log = open(output_path, 'a')
+
+save_iters = 10
 
 for i in range(n_games):
+    game_log = open(game_log_format_str.format(i), 'w')
+    game_log.write('player_color,move\n')
     game = Backgammon(Player('p1', 'white'), Player('p2', 'black'))
     game.start_game()
     s = game.encoded_state()
@@ -89,42 +104,50 @@ for i in range(n_games):
         game.roll_and_register()
         explore = (np.random.rand() < epsilon)
         if explore:
-            move = game.valid_actions()[np.random.choice(
-                range(len(game.valid_actions())))]
+            legal_moves = game.valid_actions()
+            move = legal_moves[np.random.choice(
+                range(len(legal_moves)))]
             move_weight = 0
         else:
             move = best_action(game, s, model)
             move_weight = 1
         display_board(game, game.current_board())
-        out = "Move: "
-        for m in move:
-            out += "({},{}) ".format(m.source(), m.destination())
-        print(out)
+        # out = "Move: "
+        # for m in move:
+            # out += "({},{}) ".format(m.source(), m.destination())
+        # print(out)
 
         s_1 = game.simulate_single_move(s, move)
-        print(s)
-        print(s_1)
+        # print(s)
+        # print(s_1)
         if (game.is_terminal_state(s_1)):
-            game_loss += move_weight * model.train_final_example(torch.tensor(
+            final_loss = model.train_final_example(torch.tensor(
                 s).reshape(-1).type(torch.FloatTensor), torch.tensor(game.terminal_value(s_1)).type(torch.FloatTensor))
+            game_loss += move_weight * final_loss
             num_moves += move_weight
         else:
             game_loss += move_weight * model.train_single_example(torch.tensor(
                 s).reshape(-1).type(torch.FloatTensor), torch.tensor(s_1).reshape(-1).type(torch.FloatTensor))
             num_moves += move_weight
 
-        print(game_loss)
-
+        # print(game_loss)
+        # print("{},{}\n".format(game.current_player().color, game.move_to_str(move)))
+        game_log.write("{},{}\n".format(game.current_player().color, game.move_to_str(move)))
         game.make_turn(move)
         s = game.encoded_state()
 
-    f.write('{},{},{}\n'.format(i, game_loss/num_moves, plys))
+    train_log.write('{},{},{},{}\n'.format(i, game_loss/num_moves, final_loss, plys))
     state_loader = DataLoader(
         [torch.tensor(game.encoded_state()).reshape(-1).type(torch.FloatTensor)], batch_size=4)
-    print(model.get_predicted_move_vals(state_loader))
-    print(game.terminal_value(s))
+    game_log.close()
+    # print(model.get_predicted_move_vals(state_loader))
+    # print(game.terminal_value(s))
+    if (i + 1) % save_iters == 0:
+        torch.save(model, model_path_format.format(n_games_trained + i + 1))
+        train_log.close()
+        train_log = open(output_path, 'a')
 
-f.close()
+train_log.close()
 
 # state_loader = DataLoader(
 #     [torch.tensor(game.encoded_state()).reshape(-1).type(torch.FloatTensor)], batch_size=4)

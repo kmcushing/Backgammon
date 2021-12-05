@@ -45,10 +45,6 @@ class TD_Net(nn.Module):
             y_1 = self.forward(next_state)
 
         loss = self.loss(y_0, y_1)
-        print(start_state)
-        print(next_state)
-        print(y_0)
-        print(y_1)
         loss.backward()
         self.optimizer.step()
         print(loss.item())
