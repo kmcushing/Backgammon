@@ -5,7 +5,7 @@ import numpy as np
 
 
 class TD_Net(nn.Module):
-
+    
     def __init__(self, input_dim=52, hidden_dim=80, output_dim=4, alpha=0.01,
                  lambda_param=0, device='cpu'):
         '''
@@ -47,7 +47,6 @@ class TD_Net(nn.Module):
         loss = self.loss(y_0, y_1)
         loss.backward()
         self.optimizer.step()
-        print(loss.item())
         return loss.item()
     
     def train_final_example(self, start_state, final_state_value):

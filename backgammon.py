@@ -398,6 +398,14 @@ class Backgammon():
         except NoValidRollException as e:
             print(e)
 
+    def make_turn_ignore_legality(self, moves):
+        roll = self.get_active_roll(self._game_state.current_player().id)
+        checker_color = self._game_state.current_player().color
+        for move in moves:
+            if (move.source() != -1 and move.destination() != -1):
+                self.move_checker(move, checker_color)
+        self._game_state.valid_move_made()
+
     def get_active_roll(self, player_id):
         current_round = self._game_state.current_round()
         if len(self._rollout[player_id]) < current_round:
