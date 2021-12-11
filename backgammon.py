@@ -550,7 +550,7 @@ class Backgammon():
                     #     possible_turns = [turn for turn in possible_turns
                     #                       if self.is_legal_turn(turn, rolls)]
                     #     i -= 1
-            else:
+            if len(possible_turns) < 1:
                 possible_turns =[[Move(curr_player.id, -1, -1)]]
         # print("Legal Moves:")
         # for t in possible_turns:

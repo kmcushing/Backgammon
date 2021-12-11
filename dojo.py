@@ -4,6 +4,7 @@ import torch
 from torch.utils.data import DataLoader
 from backgammon import Backgammon, Player
 
+
 def best_action(game, state, model):
     # use mode to compute best move according to learned policy
     with torch.no_grad():
@@ -66,13 +67,13 @@ n_games = 1000
 epsilon = 0.4
 
 # modify these
-is_new_output_path = True
+is_new_output_path = False
 output_path = 'data/training_results.csv'
 game_log_format_str = 'data/game_logs/game_{}_log.csv'
 
-is_new_model_path = True
+is_new_model_path = False
 model_path_format = 'models/td_net_{}_games.pt'
-n_games_trained = 0
+n_games_trained = 630
 if is_new_model_path:
     torch.save(model, model_path_format.format(n_games_trained))
 else:
@@ -88,7 +89,7 @@ else:
 save_iters = 10
 
 for i in range(n_games):
-    game_log = open(game_log_format_str.format(i), 'w')
+    game_log = open(game_log_format_str.format(i+n_games_trained+1), 'w')
     game_log.write('player_color,move\n')
     game = Backgammon(Player('p1', 'white'), Player('p2', 'black'))
     game.start_game()
@@ -114,7 +115,7 @@ for i in range(n_games):
         display_board(game, game.current_board())
         # out = "Move: "
         # for m in move:
-            # out += "({},{}) ".format(m.source(), m.destination())
+        # out += "({},{}) ".format(m.source(), m.destination())
         # print(out)
 
         s_1 = game.simulate_single_move(s, move)
@@ -132,11 +133,13 @@ for i in range(n_games):
 
         # print(game_loss)
         # print("{},{}\n".format(game.current_player().color, game.move_to_str(move)))
-        game_log.write("{},{}\n".format(game.current_player().color, game.move_to_str(move)))
+        game_log.write("{},{}\n".format(
+            game.current_player().color, game.move_to_str(move)))
         game.make_turn(move)
         s = game.encoded_state()
 
-    train_log.write('{},{},{},{}\n'.format(i, game_loss/num_moves, final_loss, plys))
+    train_log.write('{},{},{},{}\n'.format(i + n_games_trained,
+                                           game_loss/num_moves, final_loss, plys))
     state_loader = DataLoader(
         [torch.tensor(game.encoded_state()).reshape(-1).type(torch.FloatTensor)], batch_size=4)
     game_log.close()
