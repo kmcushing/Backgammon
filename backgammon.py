@@ -225,6 +225,17 @@ class Backgammon():
         self._board = Board(color_1=colors[0], color_2=colors[1])
         self._board.setup_board(standard_board, colors)
 
+    def start_game_deterministic_first_player(self):
+        pair = self.roll_dice()
+        current_player_index = 1
+        current_player = self._players[current_player_index]
+        self._game_state.start_game_with_current_player_id(current_player.id)
+
+        colors = self._game_state.checker_colors()
+        assert len(colors) >= 2
+        self._board = Board(color_1=colors[0], color_2=colors[1])
+        self._board.setup_board(standard_board, colors)
+
     def is_bearing_off(self, move):
         return move.destination() == self._off
 
@@ -621,12 +632,13 @@ class Backgammon():
         return encoded_state
 
     def is_terminal_state(self, state):
-        return (state[0][0] == self._board.total_checkers()
-                or state[1][0] == self._board.total_checkers())
+        return (state[0][0] >= self._board.total_checkers()
+                or state[1][0] >= self._board.total_checkers())
 
     def terminal_value(self, state):
         # ASSUMES STATE IS TERMINAL
-        if (state[0][0] == self._board.total_checkers()):
+        print(state)
+        if (state[0][0] >= self._board.total_checkers()):
             if state[1][0] == 0:
                 return [1, 0, 0, 0]
             else:
