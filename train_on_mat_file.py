@@ -123,13 +123,15 @@ if __name__ == '__main__':
 
     is_new_model_path = True
     model_path_format = 'tournament_train_models/td_net_{}_games.pt'
-    n_games_trained = 0
+    # n_games_trained = 0
+    n_games_trained = 118492
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # print('Device: {}'.format(device))
     model = TD_Net_Wrapper(device=device)
 
-    new_model = True
+    # new_model = True
+    new_model = False
 
     if new_model:
         torch.save(model.net, model_path_format.format(n_games_trained))
@@ -144,18 +146,30 @@ if __name__ == '__main__':
 
     # save_iters = 100
     lambda_param = 0.7
-    lr = 0.1
+    # lr = 0.1
+    lr = 0.025
 
     num_moves_by_result = {'[1, 0, 0, 0]': 0, '[0, 1, 0, 0]': 0,
                            '[0, 0, 1, 0]': 0, '[0, 0, 0, 1]': 0}
 
     game_log_dir = 'data/tournament_game_data'
 
-    epochs = 5
+    # epoch lr - halved each time
+    #   1   0.1
+    #   2   0.05
+    #   3
+    #   4
+    #   5
+    #   6
+
+    epochs = 2
 
     for i in range(epochs):
 
-        for player_dir in os.listdir(game_log_dir):
+        for j in range(len(os.listdir(game_log_dir))):
+            if j < os.listdir(game_log_dir).index('00202 Marty Storer'):
+                continue
+            player_dir = os.listdir(game_log_dir)[j]
             if player_dir[0] == '.':
                 continue
             match_log_dir = os.path.join(game_log_dir, player_dir, 'MAT Files')
@@ -172,6 +186,7 @@ if __name__ == '__main__':
             train_log.close()
             train_log = open(output_path, 'a')
             torch.save(model.net, model_path_format.format(n_games_trained))
+        lr /= 2
 
     print(num_moves_by_result)
     s1 = ''

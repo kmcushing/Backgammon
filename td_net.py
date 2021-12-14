@@ -6,7 +6,7 @@ import numpy as np
 
 class TD_Net(nn.Module):
 
-    def __init__(self, input_dim=52, hidden_dim=80, output_dim=4, alpha=0.1,
+    def __init__(self, input_dim=198, hidden_dim=80, output_dim=4, alpha=0.1,
                  lambda_param=0.7, device='cpu'):
         '''
         Defines a neural network with a single hidden layer to train according

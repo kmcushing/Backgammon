@@ -54,7 +54,8 @@ def get_games_from_match_log(path):
     game_number = 0
     game_won = False
     for l in open(path, 'r').readlines():
-        l = l.replace('Off', '0').replace('Bar', '25').replace('*', '')
+        l = l.replace('Off', '0').replace('Bar', '25').replace(
+            '*', '').replace('off', '0').replace('bar', '25')
         if 'Wins' in l:
             words = l
             game_won = True
