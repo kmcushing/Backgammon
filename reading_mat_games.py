@@ -7,18 +7,20 @@ from backgammon import Move
 # TODO: Convert move strs to Moves
 
 
-def parse_moves_from_words(words, new_game):
+def parse_moves_from_words(words, new_game, doubling_factor):
     move_strs = {1: [], 2: []}
     cp_index = 0
-    doubling_factor = 1
+    # print(words)
+    if 'Wins' in words:
+        split = words.split()
+        i = words.index("Wins")
+        points = int(split[split.index('Wins') + 1]) // doubling_factor
+        if i < 20:
+            return {'final_state': [points // 2, int(points == 1), 0, 0]}, doubling_factor
+        else:
+            return {'final_state': [0, 0, int(points == 1), points // 2]}, doubling_factor
     for i in range(len(words)):
         word = words[i]
-        if 'Wins' in word:
-            points = int(words[i + 1]) / doubling_factor
-            if i < 10:
-                return {'final_state': [points // 2, int(points == 1), 0, 0]}
-            else:
-                return {'final_state': [0, 0, points // 2, int(points == 1)]}
         if 'Takes' in word:
             cp_index += 1
             doubling_factor *= 2
@@ -39,7 +41,7 @@ def parse_moves_from_words(words, new_game):
         temp = move_strs[1]
         move_strs[1] = move_strs[2]
         move_strs[2] = temp
-    return move_strs
+    return move_strs, doubling_factor
 
 
 def get_games_from_match_log(path):
@@ -47,31 +49,35 @@ def get_games_from_match_log(path):
     skip_game = False
     games = []
     game = []
+    game_number = 0
     for l in open(path, 'r').readlines():
-        if 'Drops' in l:
-            skip_game = True
         l = l.replace('Off', '0').replace('Bar', '25').replace('*', '')
-        game_number = 0
-        if 'Wins' not in l:
-            words = l.strip().split()
+        if 'Wins' in l:
+            words = l
         else:
-            words = l.split()
+            words = l.strip().split()
         if len(words) == 0 or words[0] == ';':
+            # print("skipping line")
             continue
         if words[0] == 'Game':
-            if not skip_game and len(game) > 0:
+            # print(words)
+            if game_number > 0:
                 games.append(game)
             game = []
             game_number = int(words[1])
             new_game = True
-            skip_game = False
+            doubling_factor = 1
             continue
-        if ')' not in words[0]:
+        if ')' not in words[0] and 'Wins' not in words:
             continue
-        move_strs = parse_moves_from_words(words, new_game)
+        move_strs, doubling_factor = parse_moves_from_words(
+            words, new_game, doubling_factor)
         if 'final_state' in move_strs.keys() or move_strs[1] != [] or move_strs[2] != []:
             game.append(move_strs)
         new_game = False
+        # print(game_number)
+        # print(doubling_factor)
+    games.append(game)
     return games
 
 
@@ -93,3 +99,14 @@ if __name__ == '__main__':
             games = get_games_from_match_log(match_log_path)
             game_count += len(games)
     print(game_count)
+
+# if __name__ == '__main__':
+#     player_path = 'data/tournament_game_data/00101 Wolfgang Bacher/MAT Files'
+#     match_path = '001 Kristoffer Hoetzeneder -Wolfgang Bacher_12_2014.mat'
+#     games = get_games_from_match_log(os.path.join(player_path, match_path))
+#     for g in games:
+#         print(g)
+#     print(len(games))
+#     # file = open(os.path.join(player_path, match_path), 'r')
+#     # for l in file.readlines():
+#     #     print(l)

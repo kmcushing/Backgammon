@@ -33,13 +33,14 @@ class TD_Net(nn.Module):
 
     def forward(self, x):
         x = torch.sigmoid(self.w1(x))
-        # return F.softmax(F.sigmoid(self.w2(x)), dim=-1)
         return F.softmax(self.w2(x), dim=-1)
+        # return F.normalize(self.w2(x), dim=-1)
         # return torch.sigmoid(self.w2(x))
+        # return self.w2(x)
 
 
 class TD_Net_Wrapper():
-    def __init__(self, input_dim=52, hidden_dim=80, output_dim=4, alpha=0.0001,
+    def __init__(self, input_dim=198, hidden_dim=80, output_dim=4, alpha=0.1,
                  lambda_param=0.7, device='cpu'):
 
         self.net = TD_Net(input_dim=input_dim, hidden_dim=hidden_dim,
@@ -51,8 +52,9 @@ class TD_Net_Wrapper():
         # print([len(l) for l in self.net.parameters()])
         # print([l.size() for l in self.net.parameters()])
         # loss function in TD-Gammon paper is MAE Loss
-        self.loss = nn.L1Loss()
-        # self.loss = nn.SmoothL1Loss()
+        # self.loss = nn.L1Loss()
+        self.loss = nn.SmoothL1Loss()
+        # self.loss = nn.CrossEntropyLoss()
         self.device = device
 
     def train_single_example(self, start_state, next_state, optimizer):

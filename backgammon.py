@@ -124,6 +124,14 @@ class GameState():
         self._current_player_index = 0
         self._starting_player_id = None
         self._turn_index = 0
+    
+    def copy(self):
+        game_state = GameState(self._players)
+        game_state._n_players = copy.copy(self._n_players)
+        game_state._current_player_index = copy.copy(self._current_player_index)
+        game_state._starting_player_id = copy.copy(self._starting_player_id)
+        game_state._turn_index = copy.copy(self._turn_index)
+        return game_state
 
     def start_game_with_current_player_id(self, current_player_id):
         self._players = self.ordered_players_with_current_player_id(
@@ -199,6 +207,20 @@ class Backgammon():
         }
         self._off = 0
         self._bar = 25
+
+    def copy(self):
+        game = Backgammon(self._players[0], self._players[1])
+        game._board = self._board.copy()
+        game._game_state = self._game_state.copy()
+        game._players = copy.deepcopy(self._players)
+        game._rollout = copy.deepcopy(self._rollout)
+        game._moves = copy.deepcopy(self._moves)
+        game._doubling_die = copy.copy(self._doubling_die)
+        game._current_player_index = copy.copy(self._current_player_index)
+        game._directions = copy.deepcopy(self._directions)
+        game._off = 0
+        game._bar = 25
+        return game
 
     def roll_dice(self):
         def roll(): return random.randint(1, 6)
@@ -579,7 +601,7 @@ class Backgammon():
         #     print(turn)
         return possible_turns
 
-    def encoded_state(self):
+    def board_vectors(self):
         state = np.zeros((2, 26))
         cp_board = copy.deepcopy(
             self._board._checkers[self.current_player().color])
@@ -602,6 +624,26 @@ class Backgammon():
         state[op_idx][25] = self._board._bar[self.next_player().color]
 
         return state
+
+    def encoded_state(self):
+        board_vectors = self.board_vectors()
+        state = np.zeros((2, 99))
+        for i in range(2):
+            state[i][0] = board_vectors[i][0] / 15
+            for j in range(0, 24):
+                state[i][4 * j + 1] = int(board_vectors[i][j] >= 1)
+                state[i][4 * j + 2] = int(board_vectors[i][j] >= 2)
+                state[i][4 * j + 3] = int(board_vectors[i][j] >= 3)
+                if board_vectors[i][j] > 3:
+                    state[i][4 * j + 4] = (board_vectors[i][j] - 3) / 2
+            state[i][-2] = board_vectors[i][25] / 2
+        if self._board.direction_of_color(self.current_player().color) == 1:
+            state[0][-1] = 1
+        else:
+            state[1][-1] = 1
+        return state
+
+
 
     def current_player_direction(self):
         return self._board.direction_of_color(self.current_player().color)
