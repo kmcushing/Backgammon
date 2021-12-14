@@ -14,11 +14,13 @@ def parse_moves_from_words(words, new_game, doubling_factor):
     if 'Wins' in words:
         split = words.split()
         i = words.index("Wins")
-        points = int(split[split.index('Wins') + 1]) // doubling_factor
+        points = max(1, int(split[split.index('Wins') + 1]) // doubling_factor)
+        # print(doubling_factor)
+        # print(points)
         if i < 20:
-            return {'final_state': [points // 2, int(points == 1), 0, 0]}, doubling_factor
+            return {'final_state': [min(points // 2, 1), int(points == 1), 0, 0]}, doubling_factor
         else:
-            return {'final_state': [0, 0, int(points == 1), points // 2]}, doubling_factor
+            return {'final_state': [0, 0, int(points == 1), min(points // 2, 1)]}, doubling_factor
     for i in range(len(words)):
         word = words[i]
         if 'Takes' in word:
@@ -50,10 +52,12 @@ def get_games_from_match_log(path):
     games = []
     game = []
     game_number = 0
+    game_won = False
     for l in open(path, 'r').readlines():
         l = l.replace('Off', '0').replace('Bar', '25').replace('*', '')
         if 'Wins' in l:
             words = l
+            game_won = True
         else:
             words = l.strip().split()
         if len(words) == 0 or words[0] == ';':
@@ -61,8 +65,9 @@ def get_games_from_match_log(path):
             continue
         if words[0] == 'Game':
             # print(words)
-            if game_number > 0:
+            if game_number > 0 and game_won:
                 games.append(game)
+                game_won = False
             game = []
             game_number = int(words[1])
             new_game = True
@@ -77,7 +82,8 @@ def get_games_from_match_log(path):
         new_game = False
         # print(game_number)
         # print(doubling_factor)
-    games.append(game)
+    if game_won:
+        games.append(game)
     return games
 
 

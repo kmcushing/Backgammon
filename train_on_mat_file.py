@@ -5,6 +5,7 @@ from torch.utils.data import DataLoader
 from backgammon import Backgammon, Player, Move
 import re
 from reading_mat_games import get_games_from_match_log
+import os
 
 
 def move_list(games_list, pid1, pid2):
@@ -57,6 +58,8 @@ def train_on_match(lr, lambda_param, match_file_path, model,
     # games = [games[0]]
     # print(games)
     for i in range(len(games)):
+        if len(games[i]) == 0:
+            continue
         # for g in games:
         # for i in range(n_matches_sim):
         optimizer = torch.optim.SGD(model.net.parameters(), lr=lr,
@@ -146,14 +149,29 @@ if __name__ == '__main__':
     num_moves_by_result = {'[1, 0, 0, 0]': 0, '[0, 1, 0, 0]': 0,
                            '[0, 0, 1, 0]': 0, '[0, 0, 0, 1]': 0}
 
-    for match_path in ['data/tournament_game_data/00101 Wolfgang Bacher/MAT Files/001 Kristoffer Hoetzeneder -Wolfgang Bacher_12_2014.mat' for i in range(100)]:
-        # for match_path in ['data/tournament_game_data/00101 Wolfgang Bacher/MAT Files/001 Kristoffer Hoetzeneder -Wolfgang Bacher_12_2014.mat']:
-        model, n_games_trained, num_moves_by_result = train_on_match(lr, lambda_param,  match_path, model, train_log,
-                                                                     n_games_trained, num_moves_by_result)
+    game_log_dir = 'data/tournament_game_data'
 
-        train_log.close()
-        train_log = open(output_path, 'a')
-        torch.save(model.net, model_path_format.format(n_games_trained))
+    epochs = 5
+
+    for i in range(epochs):
+
+        for player_dir in os.listdir(game_log_dir):
+            if player_dir[0] == '.':
+                continue
+            match_log_dir = os.path.join(game_log_dir, player_dir, 'MAT Files')
+            for match in os.listdir(match_log_dir):
+                if match[-3:] == '.xg' or match[0] == '.':
+                    continue
+                match_path = os.path.join(match_log_dir, match)
+                print(match_path)
+            # for match_path in ['data/tournament_game_data/00101 Wolfgang Bacher/MAT Files/001 Kristoffer Hoetzeneder -Wolfgang Bacher_12_2014.mat' for i in range(100)]:
+                # for match_path in ['data/tournament_game_data/00101 Wolfgang Bacher/MAT Files/001 Kristoffer Hoetzeneder -Wolfgang Bacher_12_2014.mat']:
+                model, n_games_trained, num_moves_by_result = train_on_match(lr, lambda_param,  match_path, model, train_log,
+                                                                             n_games_trained, num_moves_by_result)
+
+            train_log.close()
+            train_log = open(output_path, 'a')
+            torch.save(model.net, model_path_format.format(n_games_trained))
 
     print(num_moves_by_result)
     s1 = ''
