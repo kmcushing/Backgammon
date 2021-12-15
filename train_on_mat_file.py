@@ -116,22 +116,24 @@ def train_on_match(lr, lambda_param, match_file_path, model,
 
 
 if __name__ == '__main__':
+
+    # adjust these before run
     is_new_output_path = True
+    n_games_trained = 0
+    new_model = True
+    # new_model = False
+    # n_games_trained = 118492
+    # is_new_output_path = False
+
     output_path = 'data/tournament_training_results.csv'
     game_data_path = 'data/tournament_game_data.csv'
     tournament_game_data = open(game_data_path, 'w')
 
-    is_new_model_path = True
     model_path_format = 'tournament_train_models/td_net_{}_games.pt'
-    # n_games_trained = 0
-    n_games_trained = 118492
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # print('Device: {}'.format(device))
     model = TD_Net_Wrapper(device=device)
-
-    # new_model = True
-    new_model = False
 
     if new_model:
         torch.save(model.net, model_path_format.format(n_games_trained))
@@ -141,13 +143,14 @@ if __name__ == '__main__':
 
     if is_new_output_path:
         train_log = open(output_path, 'w')
+        train_log.write('game,avg_loss,final_loss\n')
     else:
         train_log = open(output_path, 'a')
 
     # save_iters = 100
     lambda_param = 0.7
-    # lr = 0.1
-    lr = 0.025
+    lr = 0.1
+    # lr = 0.025
 
     num_moves_by_result = {'[1, 0, 0, 0]': 0, '[0, 1, 0, 0]': 0,
                            '[0, 0, 1, 0]': 0, '[0, 0, 0, 1]': 0}
@@ -167,8 +170,6 @@ if __name__ == '__main__':
     for i in range(epochs):
 
         for j in range(len(os.listdir(game_log_dir))):
-            if j < os.listdir(game_log_dir).index('00202 Marty Storer'):
-                continue
             player_dir = os.listdir(game_log_dir)[j]
             if player_dir[0] == '.':
                 continue
