@@ -1,4 +1,5 @@
 from td_net import TD_Net_Wrapper
+from gammon_net import Gammon_Net_Wrapper
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -125,15 +126,17 @@ if __name__ == '__main__':
     # n_games_trained = 118492
     # is_new_output_path = False
 
-    output_path = 'data/tournament_training_results.csv'
-    game_data_path = 'data/tournament_game_data.csv'
+    output_path = 'data/tournament_training_results_gammon_net.csv'
+    # output_path = 'data/tournament_training_results.csv'
+    game_data_path = 'data/tournament_game_data_gammon_net.csv'
     tournament_game_data = open(game_data_path, 'w')
 
-    model_path_format = 'tournament_train_models/td_net_{}_games.pt'
+    model_path_format = 'tournament_train_models_gammon_net/td_net_{}_games.pt'
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # print('Device: {}'.format(device))
-    model = TD_Net_Wrapper(device=device)
+    # model = TD_Net_Wrapper(device=device)
+    model = Gammon_Net_Wrapper(device=device)
 
     if new_model:
         torch.save(model.net, model_path_format.format(n_games_trained))
@@ -165,7 +168,7 @@ if __name__ == '__main__':
     #   5
     #   6
 
-    epochs = 2
+    epochs = 5
 
     for i in range(epochs):
 
