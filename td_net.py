@@ -23,17 +23,17 @@ class TD_Net(nn.Module):
         '''
         super(TD_Net, self).__init__()
         self.w1 = nn.Linear(input_dim, hidden_dim)
-        self.w1.weight = nn.Parameter(torch.zeros(hidden_dim, input_dim))
-        self.w1.bias = nn.Parameter(torch.zeros(hidden_dim))
+        # self.w1.weight = nn.Parameter(torch.zeros(hidden_dim, input_dim))
+        # self.w1.bias = nn.Parameter(torch.zeros(hidden_dim))
         self.w2 = nn.Linear(hidden_dim, output_dim)
-        self.w2.weight = nn.Parameter(torch.zeros(output_dim, hidden_dim))
-        self.w2.bias = nn.Parameter(torch.zeros(output_dim))
+        # self.w2.weight = nn.Parameter(torch.zeros(output_dim, hidden_dim))
+        # self.w2.bias = nn.Parameter(torch.zeros(output_dim))
         self.to(device)
         self.device = device
 
     def forward(self, x):
         x = torch.sigmoid(self.w1(x))
-        return F.softmax(self.w2(x), dim=-1)
+        return F.softmax(torch.tensor(self.w2(x), dim=-1))
         # return F.normalize(self.w2(x), dim=-1)
         # return torch.sigmoid(self.w2(x))
         # return self.w2(x)
