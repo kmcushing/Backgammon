@@ -126,12 +126,12 @@ if __name__ == '__main__':
     # n_games_trained = 118492
     # is_new_output_path = False
 
-    output_path = 'data/tournament_training_results_gammon_net.csv'
+    output_path = 'data/tournament_training_results_gammon_net2.csv'
     # output_path = 'data/tournament_training_results.csv'
-    game_data_path = 'data/tournament_game_data_gammon_net.csv'
+    game_data_path = 'data/tournament_game_data_gammon_net2.csv'
     tournament_game_data = open(game_data_path, 'w')
 
-    model_path_format = 'tournament_train_models_gammon_net/td_net_{}_games.pt'
+    model_path_format = 'tournament_train_models_gammon_net2/td_net_{}_games.pt'
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # print('Device: {}'.format(device))
@@ -151,7 +151,7 @@ if __name__ == '__main__':
         train_log = open(output_path, 'a')
 
     # save_iters = 100
-    lambda_param = 0.7
+    lambda_param = 0
     lr = 0.1
     # lr = 0.025
 
@@ -168,7 +168,7 @@ if __name__ == '__main__':
     #   5
     #   6
 
-    epochs = 5
+    epochs = 2
 
     for i in range(epochs):
 

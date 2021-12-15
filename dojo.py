@@ -131,12 +131,12 @@ for i in range(n_games):
         # print(s_1)
         if (game_copy.is_terminal_state(s_1)):
             final_loss = model.train_final_example(torch.tensor(
-                s).reshape(-1).type(torch.FloatTensor), torch.tensor(game_copy.terminal_value(s_1)).type(torch.FloatTensor), optimizer)
+                s, requires_grad=True).reshape(-1).type(torch.FloatTensor), torch.tensor(game_copy.terminal_value(s_1)).type(torch.FloatTensor), optimizer)
             game_loss += move_weight * final_loss
             num_moves += move_weight
         else:
             game_loss += move_weight * model.train_single_example(torch.tensor(
-                s).reshape(-1).type(torch.FloatTensor), torch.tensor(s_1).reshape(-1).type(torch.FloatTensor), optimizer)
+                s, requires_grad=True).reshape(-1).type(torch.FloatTensor), torch.tensor(s_1).reshape(-1).type(torch.FloatTensor), optimizer)
             num_moves += move_weight
 
         # print(game_loss)
