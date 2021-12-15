@@ -118,6 +118,7 @@ class TD_Net_Wrapper():
         batch_size = state_data_loader.batch_size
         values = torch.zeros(len(state_data_loader.dataset))
         for i, state in enumerate(state_data_loader):
+            state.to(self.device)
             pred = self.net(state)
             val = torch.tensor(
                 [2, 1, -1, -2], dtype=torch.float) @ pred.type(torch.FloatTensor).T
