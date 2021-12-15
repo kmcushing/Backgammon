@@ -82,8 +82,8 @@ class Board():
 
     def all_on_home_board(self, color):
         if self.direction_of_color(color) == -1:
-            return sum([self.num_checkers_at_index(color, i) for i in range(23,17, -1)]) + self.born_off(color) == self._total_checkers
-        return sum([self.num_checkers_at_index(color, i) for i in range(0,6)]) + self.born_off(color) == self._total_checkers
+            return sum([self.num_checkers_at_index(color, i) for i in range(23, 17, -1)]) + self.born_off(color) == self._total_checkers
+        return sum([self.num_checkers_at_index(color, i) for i in range(0, 6)]) + self.born_off(color) == self._total_checkers
 
     def copy(self):
         new_board = Board(self._colors[0], self._colors[1])
@@ -92,6 +92,7 @@ class Board():
         new_board._born_off = copy.deepcopy(self._born_off)
         new_board._total_checkers = copy.deepcopy(self._total_checkers)
         return new_board
+
 
 class Move():
     def __init__(self, player_id, source, destination):
@@ -113,7 +114,7 @@ class Move():
         return self._distance
 
     def __eq__(self, other):
-      return self.source() == other.source() and self.destination() == other.destination() and self.distance() == other.distance() and self.player_id() == other.player_id()
+        return self.source() == other.source() and self.destination() == other.destination() and self.distance() == other.distance() and self.player_id() == other.player_id()
 
 
 class GameState():
@@ -124,11 +125,12 @@ class GameState():
         self._current_player_index = 0
         self._starting_player_id = None
         self._turn_index = 0
-    
+
     def copy(self):
         game_state = GameState(self._players)
         game_state._n_players = copy.copy(self._n_players)
-        game_state._current_player_index = copy.copy(self._current_player_index)
+        game_state._current_player_index = copy.copy(
+            self._current_player_index)
         game_state._starting_player_id = copy.copy(self._starting_player_id)
         game_state._turn_index = copy.copy(self._turn_index)
         return game_state
@@ -296,8 +298,8 @@ class Backgammon():
         available_dests = [point for point in range(1, board.board_size(
         )+1) if board.num_checkers_at_index(self.next_player().color, self.board_loc_from_point(color, point)) < 2]
         if board.all_on_home_board(color):
-          available_dests.append(self._off)
-        
+            available_dests.append(self._off)
+
         available_srcs = [point for point in range(1, board.board_size(
         )+1) if board.num_checkers_at_index(color, self.board_loc_from_point(color, point)) > 0]
         if board.num_checkers_on_bar(color) > 0:
@@ -308,7 +310,6 @@ class Backgammon():
         if sum([(max(0, src - dist)) in available_dests for dist in remaining_rolls for src in available_srcs]) > 0:
             return True
         return False
-        
 
     def is_legal_turn(self, moves, rolls):
         # out = 'Move: '
@@ -490,7 +491,7 @@ class Backgammon():
         # only append if can bear off - will need to update after each sim move
         # print("all home: {}".format(self._board.all_on_home_board(curr_player.color)))
         if self._board.all_on_home_board(curr_player.color):
-          available_checker_points.append(self._off)
+            available_checker_points.append(self._off)
         available_srcs = [point for point in range(1, self._board.board_size(
         )+1) if self._board.num_checkers_at_index(curr_player.color, self.board_loc_from_point(curr_player.color, point)) > 0]
         if self._board.num_checkers_on_bar(curr_player.color) > 0:
@@ -502,7 +503,7 @@ class Backgammon():
         # possible_turns = []
         # possible_bear_offs = []
         simul_board = copy.deepcopy(self._board)
-        
+
         def possibly_legal_sequences(curr_player, opp_player, board, move_lengths, move_seqs, current_move_seq):
             if len(move_lengths) == 0:
                 # maybe add or all checkers beared off here?
@@ -515,8 +516,8 @@ class Backgammon():
             )+1) if simul_board.num_checkers_at_index(opp_player.color, self.board_loc_from_point(curr_player.color, point)) < 2]
             # only append if can bear off - will need to update after each sim move
             if simul_board.all_on_home_board(curr_player.color):
-                for i in range(-5,1):
-                  available_dests.append(i)
+                for i in range(-5, 1):
+                    available_dests.append(i)
                 available_checker_points.append(self._off)
             # print(available_dests)
             available_srcs = [point for point in range(1, simul_board.board_size(
@@ -533,10 +534,10 @@ class Backgammon():
                         move_lengths2.remove(dist)
                         depth = len(current_move_seq)
                         if depth > 1:
-                          if sum([[move, current_move_seq[-1]] == seq[depth - 2:depth] and len(seq) > depth for seq in move_seqs]) > 0 and current_move_seq[-1].source() != 25 and move.destination() > 0 and simul_board.born_off(curr_player.color) < 1:
-                            # print("Move: ({},{})".format(move.source(), move.destination()))
-                            # print('skip this combo')
-                            continue
+                            if sum([[move, current_move_seq[-1]] == seq[depth - 2:depth] and len(seq) > depth for seq in move_seqs]) > 0 and current_move_seq[-1].source() != 25 and move.destination() > 0 and simul_board.born_off(curr_player.color) < 1:
+                                # print("Move: ({},{})".format(move.source(), move.destination()))
+                                # print('skip this combo')
+                                continue
                         current_move_seq2 = copy.deepcopy(current_move_seq)
                         current_move_seq2.append(move)
                         simul_board2 = simul_board.copy()
@@ -548,19 +549,18 @@ class Backgammon():
                         elif (self.is_bearing_off(move)):
                             # print("appending moves of length {}".format(len(current_move_seq2)))
                             # move_seqs.append(current_move_seq2)
-                            simul_board2.bear_off(curr_player.color, self.board_loc_from_point(curr_player.color, src))
+                            simul_board2.bear_off(
+                                curr_player.color, self.board_loc_from_point(curr_player.color, src))
                         else:
                             simul_board2.move_checker(curr_player.color,
-                                                    self.board_loc_from_point(curr_player.color, src), self.board_loc_from_point(curr_player.color, move.destination()))
+                                                      self.board_loc_from_point(curr_player.color, src), self.board_loc_from_point(curr_player.color, move.destination()))
                             # board_src, board_dst = self.board_source_and_dest_from_move(move)
-                        move_seqs = possibly_legal_sequences(curr_player, 
-                            opp_player, simul_board2, move_lengths2, move_seqs, current_move_seq2)
+                        move_seqs = possibly_legal_sequences(curr_player,
+                                                             opp_player, simul_board2, move_lengths2, move_seqs, current_move_seq2)
             return move_seqs
 
-
-        possible_turns = possibly_legal_sequences(curr_player, opp_player, self._board, move_lengths, [],[])
-
-            
+        possible_turns = possibly_legal_sequences(
+            curr_player, opp_player, self._board, move_lengths, [], [])
 
         # print("Possibly Legal Moves:")
         # for t in possible_turns:
@@ -572,18 +572,20 @@ class Backgammon():
             turn for turn in possible_turns if self.is_legal_turn(turn, rolls)]
         if len(possible_turns) == 0:
             # print("Available checker points: {}".format(
-                # available_checker_points))
+            # available_checker_points))
             # print(available_srcs)
             if 0 in available_checker_points:
                 # available_srcs += [i for in range(1, 7)]
                 # print(rolls)
                 possible_moves = [Move(curr_player.id, src, max(
-                    0, src - dist)) for src in  available_srcs for dist in rolls]
+                    0, src - dist)) for src in available_srcs for dist in rolls]
                 if not double_roll:
-                    possible_turns = [[m1, m2] for m1, m2 in itertools.combinations(possible_moves, 2) if self.is_legal_turn([m1, m2], rolls)]
+                    possible_turns = [[m1, m2] for m1, m2 in itertools.combinations(
+                        possible_moves, 2) if self.is_legal_turn([m1, m2], rolls)]
                 else:
                     possible_moves += possible_moves
-                    possible_turns = [[m1, m2, m3, m4] for m1, m2, m3, m4 in itertools.permutations(possible_moves, 4) if self.is_legal_turn([m1, m2, m3, m4], rolls)]
+                    possible_turns = [[m1, m2, m3, m4] for m1, m2, m3, m4 in itertools.permutations(
+                        possible_moves, 4) if self.is_legal_turn([m1, m2, m3, m4], rolls)]
                     # i = 3
                     # while len(possible_turns) == 0:
                     #     possible_turns = itertools.combinations(
@@ -592,7 +594,7 @@ class Backgammon():
                     #                       if self.is_legal_turn(turn, rolls)]
                     #     i -= 1
             if len(possible_turns) < 1:
-                possible_turns =[[Move(curr_player.id, -1, -1)]]
+                possible_turns = [[Move(curr_player.id, -1, -1)]]
         # print("Legal Moves:")
         # for t in possible_turns:
         #     turn = ""
@@ -643,8 +645,6 @@ class Backgammon():
             state[1][-1] = 1
         return state
 
-
-
     def current_player_direction(self):
         return self._board.direction_of_color(self.current_player().color)
 
@@ -661,26 +661,28 @@ class Backgammon():
             op_idx = 0
         for m in moves:
             if m.source() != 25:
-                encoded_state[cp_idx][self.board_loc_from_point(self._game_state.checker_colors()[0], m.source()) + 1] -= 1
-            else: 
+                encoded_state[cp_idx][self.board_loc_from_point(
+                    self._game_state.checker_colors()[0], m.source()) + 1] -= 1
+            else:
                 encoded_state[cp_idx][25] -= 1
             if m.destination() != 0:
-                encoded_state[cp_idx][self.board_loc_from_point(self._game_state.checker_colors()[0], m.destination()) + 1] += 1
+                encoded_state[cp_idx][self.board_loc_from_point(
+                    self._game_state.checker_colors()[0], m.destination()) + 1] += 1
                 if (encoded_state[op_idx][self.board_loc_from_point(self._game_state.checker_colors()[0], m.destination()) + 1] == 1):
-                    encoded_state[op_idx][self.board_loc_from_point(self._game_state.checker_colors()[0], m.destination()) + 1] -= 1
+                    encoded_state[op_idx][self.board_loc_from_point(
+                        self._game_state.checker_colors()[0], m.destination()) + 1] -= 1
                     encoded_state[op_idx][25] += 1
             else:
                 encoded_state[cp_idx][0] += 1
         return encoded_state
 
     def is_terminal_state(self, state):
-        return (state[0][0] >= self._board.total_checkers()
-                or state[1][0] >= self._board.total_checkers())
+        return (state[0][0] >= 1
+                or state[1][0] >= 1)
 
     def terminal_value(self, state):
         # ASSUMES STATE IS TERMINAL
-        print(state)
-        if (state[0][0] >= self._board.total_checkers()):
+        if (state[0][0] >= 1):
             if state[1][0] == 0:
                 return [1, 0, 0, 0]
             else:
@@ -700,7 +702,7 @@ class Backgammon():
 
     def next_player(self):
         return self._game_state.next_player()
-    
+
     def move_to_str(self, moves):
         move_str = ''
         if moves[0].source() == -1 and moves[0].destination() == -1:
@@ -708,7 +710,8 @@ class Backgammon():
         for i in range(len(moves)):
             if i > 0:
                 move_str += '/'
-            move_str += '{}-{}'.format(moves[i].source(), moves[i].destination())
+            move_str += '{}-{}'.format(moves[i].source(),
+                                       moves[i].destination())
         return move_str
 
 
@@ -836,6 +839,7 @@ class BackGammonCLI():
 
         print("Game Over")
 
+
 class Sim():
     def __init__(self, path):
         self.f = open(path, 'r')
@@ -843,9 +847,10 @@ class Sim():
         self.f.seek(0)
         colors = [move.strip().split(",")[0] for move in first_moves]
         print(colors)
-        self.game = Backgammon(Player('p1', colors[0]), Player('p2', colors[1]))
+        self.game = Backgammon(
+            Player('p1', colors[0]), Player('p2', colors[1]))
         self.game.start_game()
-    
+
     def sim_to_move(self, num):
         lines = self.f.readlines()
         for i in range(1, num + 1):
@@ -857,12 +862,14 @@ class Sim():
             print(f"move number {i}")
             moves = []
             if move_vals == [['']]:
-                self.game.register_roll((1,1), self.game.current_player().id)
+                self.game.register_roll((1, 1), self.game.current_player().id)
                 moves.append(Move(self.game.current_player().id, -1, -1))
             else:
                 for m in move_vals:
-                    moves.append(Move(self.game.current_player().id, int(m[0]), int(m[1])))
-                self.game.register_roll((moves[0].source() - moves[0].destination(), moves[1].source() - moves[1].destination()), self.game.current_player().id)
+                    moves.append(
+                        Move(self.game.current_player().id, int(m[0]), int(m[1])))
+                self.game.register_roll((moves[0].source() - moves[0].destination(
+                ), moves[1].source() - moves[1].destination()), self.game.current_player().id)
             self.game.make_turn(moves)
             display_board(self.game, self.game._board)
             move_str = "Move: "
@@ -874,35 +881,37 @@ class Sim():
 #     cli = BackGammonCLI()
 #     cli.start_prompt()
 
+
 def display_board(self, board):
-        point_row = ""
-        point_label_row = ""
-        current_player = self.current_player()
-        current_player_color = self.current_player().color
-        next_player_color = self.next_player().color
-        current_player_started = self._game_state.starting_player_id() == current_player.id
-        board_range = list(range(board.board_size()))
-        if not current_player_started:
-            board_range.reverse()
-        for i in board_range:
-            current_player_checkers = board.num_checkers_at_index(
-                current_player_color, i)
-            next_player_checkers = board.num_checkers_at_index(
-                next_player_color, i)
-            point_string = f" <{current_player_checkers} | {next_player_checkers}> "
-            point_row += point_string
-        color_key = f"<{current_player_color} | {next_player_color}>"
-        point_label_row = ""
-        for i in range(board.board_size()):
-            point_label_row += f"{i+1}".center(9)
-        print(point_row)
-        print(point_label_row)
-        n_bar_curr = self.current_board().num_checkers_on_bar(self.current_player().color)
-        n_bar_opp = self.current_board().num_checkers_on_bar(self.next_player().color)
-        print(
-            f"Bar: {self.current_player().color}: {n_bar_curr}, {self.next_player().color}: {n_bar_opp}")
-        print(color_key)
-        print(f"current player direction: <<")
+    point_row = ""
+    point_label_row = ""
+    current_player = self.current_player()
+    current_player_color = self.current_player().color
+    next_player_color = self.next_player().color
+    current_player_started = self._game_state.starting_player_id() == current_player.id
+    board_range = list(range(board.board_size()))
+    if not current_player_started:
+        board_range.reverse()
+    for i in board_range:
+        current_player_checkers = board.num_checkers_at_index(
+            current_player_color, i)
+        next_player_checkers = board.num_checkers_at_index(
+            next_player_color, i)
+        point_string = f" <{current_player_checkers} | {next_player_checkers}> "
+        point_row += point_string
+    color_key = f"<{current_player_color} | {next_player_color}>"
+    point_label_row = ""
+    for i in range(board.board_size()):
+        point_label_row += f"{i+1}".center(9)
+    print(point_row)
+    print(point_label_row)
+    n_bar_curr = self.current_board().num_checkers_on_bar(self.current_player().color)
+    n_bar_opp = self.current_board().num_checkers_on_bar(self.next_player().color)
+    print(
+        f"Bar: {self.current_player().color}: {n_bar_curr}, {self.next_player().color}: {n_bar_opp}")
+    print(color_key)
+    print(f"current player direction: <<")
+
 
 if __name__ == "__main__":
     sim = Sim('data/game_logs/game_0_log.csv')

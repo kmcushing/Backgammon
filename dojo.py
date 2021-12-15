@@ -1,4 +1,4 @@
-from td_net import TD_Net
+from td_net import TD_Net, TD_Net_Wrapper
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
@@ -58,26 +58,31 @@ def display_board(game, board):
 # init model
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 print('Device: {}'.format(device))
-model = TD_Net(device=device)
+model = TD_Net_Wrapper(device=device)
 print("Model: {}".format(model))
 
 n_games = 1000
 
 # SARSA alg percent of time player explores vs picking optimal move
-epsilon = 0.4
+epsilon = 0.3
+
+lambda_param = 0.7
+lr = 0.1
 
 # modify these
 is_new_output_path = False
+#output_path = 'data/training_results.csv'
 output_path = 'data/training_results.csv'
 game_log_format_str = 'data/game_logs/game_{}_log.csv'
 
 is_new_model_path = False
-model_path_format = 'models/td_net_{}_games.pt'
-n_games_trained = 630
+model_path_format = 'tournament_train_models/td_net_{}_games.pt'
+n_games_trained = 217922
 if is_new_model_path:
     torch.save(model, model_path_format.format(n_games_trained))
 else:
-    model = torch.load(model_path_format.format(n_games_trained)).to(device)
+    model.net = torch.load(
+        model_path_format.format(n_games_trained)).to(device)
 
 
 if is_new_output_path:
@@ -97,9 +102,11 @@ for i in range(n_games):
     num_moves = 0
     game_loss = 0
     plys = 0
+    optimizer = torch.optim.SGD(model.net.parameters(), lr=lr,
+                                momentum=lambda_param)
     display_board(game, game.current_board())
-    model.zero_grad()
     while(not game.game_is_over()):
+        optimizer.zero_grad()
         print("ply: " + str(plys))
         plys += 1
         game.roll_and_register()
@@ -117,18 +124,19 @@ for i in range(n_games):
         # for m in move:
         # out += "({},{}) ".format(m.source(), m.destination())
         # print(out)
-
-        s_1 = game.simulate_single_move(s, move)
+        game_copy = game.copy()
+        game_copy.make_turn_ignore_legality(move)
+        s_1 = game_copy.encoded_state()
         # print(s)
         # print(s_1)
-        if (game.is_terminal_state(s_1)):
+        if (game_copy.is_terminal_state(s_1)):
             final_loss = model.train_final_example(torch.tensor(
-                s).reshape(-1).type(torch.FloatTensor), torch.tensor(game.terminal_value(s_1)).type(torch.FloatTensor))
+                s).reshape(-1).type(torch.FloatTensor), torch.tensor(game_copy.terminal_value(s_1)).type(torch.FloatTensor), optimizer)
             game_loss += move_weight * final_loss
             num_moves += move_weight
         else:
             game_loss += move_weight * model.train_single_example(torch.tensor(
-                s).reshape(-1).type(torch.FloatTensor), torch.tensor(s_1).reshape(-1).type(torch.FloatTensor))
+                s).reshape(-1).type(torch.FloatTensor), torch.tensor(s_1).reshape(-1).type(torch.FloatTensor), optimizer)
             num_moves += move_weight
 
         # print(game_loss)
@@ -140,8 +148,8 @@ for i in range(n_games):
 
     train_log.write('{},{},{},{}\n'.format(i + n_games_trained,
                                            game_loss/num_moves, final_loss, plys))
-    state_loader = DataLoader(
-        [torch.tensor(game.encoded_state()).reshape(-1).type(torch.FloatTensor)], batch_size=4)
+    # state_loader = DataLoader(
+    #     [torch.tensor(game.encoded_state()).reshape(-1).type(torch.FloatTensor)], batch_size=4)
     game_log.close()
     # print(model.get_predicted_move_vals(state_loader))
     # print(game.terminal_value(s))
