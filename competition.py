@@ -26,8 +26,8 @@ game_log_format_str = ('data/competition_logs/TD_tournament_trained_vs_'
 
 model_path_format = 'tournament_train_models/td_net_{}_games.pt'
 
-model1.net = torch.load(
-    model_path_format.format(model_n1), map_location=device)
+# model1.net = torch.load(
+#     model_path_format.format(model_n1), map_location=device)
 
 # model1 = torch.load(
 #     'self_train_models/td_net_110_games.pt', map_location=device)
