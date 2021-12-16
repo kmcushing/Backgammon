@@ -20,14 +20,17 @@ n_games = 100
 # modify these
 is_new_output_path = True
 # output_path = 'data/training_results.csv'
-output_path = 'data/training_competition_results.csv'
-game_log_format_str = ('data/competition_logs/TD' + str(model_n1) + '_vs_TD'
-                       + str(model_n2) + '_game_{}_log.csv')
+output_path = 'data/training_competition_results_tournament_vs_untrained.csv'
+game_log_format_str = ('data/competition_logs/TD_tournament_trained_vs_'
+                       + 'untrained_game_{}_log.csv')
 
 model_path_format = 'tournament_train_models/td_net_{}_games.pt'
 
 model1.net = torch.load(
     model_path_format.format(model_n1), map_location=device)
+
+# model1 = torch.load(
+#     'self_train_models/td_net_110_games.pt', map_location=device)
 
 model2.net = torch.load(
     model_path_format.format(model_n2), map_location=device)
@@ -42,7 +45,8 @@ else:
 save_iters = 10
 
 players = [model1, model2]
-numbers = [model_n1, model_n2]
+# names = ['self_trained', 'match_log_trained']
+names = ['untrained', 'match_log_trained']
 
 games_played = 0
 
@@ -79,7 +83,7 @@ for i in range(n_games):
 
     final_value = game.terminal_value(s)
     train_log.write('{},{},{},{}\n'.format(
-        games_played + i, final_value, numbers[cp_idx], plys))
+        games_played + i, final_value, names[cp_idx], plys))
     # state_loader = DataLoader(
     #     [torch.tensor(game.encoded_state()).reshape(-1).type(torch.FloatTensor)], batch_size=4)
     game_log.close()
