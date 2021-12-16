@@ -37,34 +37,21 @@ def move_list(games_list, pid1, pid2):
     return games, final_states
 
 
-def train_on_match(lr, lambda_param, match_file_path, model,
+def train_on_match(lr, match_file_path, model,
                    train_log, n_games, num_moves_by_result):
 
     p1 = Player('p1', 'white')
     p2 = Player('p2', 'black')
     game_lists = get_games_from_match_log(match_file_path)
-    # print(len(game_lists))
-    # print(game_lists)
     games, final_states = move_list(game_lists, p1.id, p2.id)
-    # print(len(games))
-    # games.reverse()
-    # for g in games:
-    # game_to_sim = np.random.randint(0, n_games_logged)
-    # game_log = open(game_log_format_str.format(game_to_sim, 'r'))
-    # game_lists = get_games_from_match_log(match_file_path)
-    # # print(len(game_lists))
-    # print(game_lists)
-    # games = move_list(game_lists, p1.id, p2.id)
-    # print(len(games))
-    # games = [games[0]]
-    # print(games)
     for i in range(len(games)):
         if len(games[i]) == 0:
             continue
         # for g in games:
         # for i in range(n_matches_sim):
-        optimizer = torch.optim.SGD(model.net.parameters(), lr=lr,
-                                    momentum=lambda_param)
+        optimizer = torch.optim.SGD(model.net.parameters(), lr=lr)
+        grads = [[torch.zeros((80, 198)), torch.zeros(80), torch.zeros((4, 80)), torch.zeros(4)]
+                 for i in range(4)]
         # print(g)
         game = Backgammon(p1, p2)
         game.start_game_deterministic_first_player()
@@ -95,16 +82,17 @@ def train_on_match(lr, lambda_param, match_file_path, model,
             s_1 = copy_game.encoded_state()
             # print(s)
             # print(s_1)
-            game_loss += model.train_single_example(torch.tensor(
-                s, requires_grad=True).reshape(-1).type(torch.FloatTensor), torch.tensor(s_1).reshape(-1).type(torch.FloatTensor), optimizer)
+            loss, grads = model.train_single_example(torch.tensor(
+                s, requires_grad=True).reshape(-1).type(torch.FloatTensor), torch.tensor(s_1).reshape(-1).type(torch.FloatTensor), optimizer, grads)
 
+            game_loss += loss
             num_moves += 1
             # print(game_loss)
             # print("{},{}\n".format(game.current_player().color, game.move_to_str(move)))
             game.make_turn_ignore_legality(ply)
             s = game.encoded_state()
         final_loss = model.train_final_example(torch.tensor(
-            s, requires_grad=True).reshape(-1).type(torch.FloatTensor), torch.tensor(final_states[i]).type(torch.FloatTensor), optimizer)
+            s, requires_grad=True).reshape(-1).type(torch.FloatTensor), torch.tensor(final_states[i]).type(torch.FloatTensor), optimizer, grads)
         game_loss += final_loss
         # print(s)
         train_log.write('{},{},{}\n'.format(n_games,
@@ -126,17 +114,21 @@ if __name__ == '__main__':
     # n_games_trained = 118492
     # is_new_output_path = False
 
-    output_path = 'data/tournament_training_results_gammon_net2.csv'
+    output_path = 'data/tournament_training_results.csv'
     # output_path = 'data/tournament_training_results.csv'
-    game_data_path = 'data/tournament_game_data_gammon_net2.csv'
+    game_data_path = 'data/tournament_game_data.csv'
     tournament_game_data = open(game_data_path, 'w')
 
-    model_path_format = 'tournament_train_models_gammon_net2/td_net_{}_games.pt'
+    model_path_format = 'tournament_train_models/td_net_{}_games.pt'
 
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     # print('Device: {}'.format(device))
-    # model = TD_Net_Wrapper(device=device)
-    model = Gammon_Net_Wrapper(device=device)
+    # save_iters = 100
+    lambda_param = 0.7
+    lr = 0.1
+    # lr = 0.025
+    model = TD_Net_Wrapper(device=device, lambda_param=lambda_param)
+    # model = Gammon_Net_Wrapper(device=device)
 
     if new_model:
         torch.save(model.net, model_path_format.format(n_games_trained))
@@ -150,23 +142,10 @@ if __name__ == '__main__':
     else:
         train_log = open(output_path, 'a')
 
-    # save_iters = 100
-    lambda_param = 0
-    lr = 0.1
-    # lr = 0.025
-
     num_moves_by_result = {'[1, 0, 0, 0]': 0, '[0, 1, 0, 0]': 0,
                            '[0, 0, 1, 0]': 0, '[0, 0, 0, 1]': 0}
 
     game_log_dir = 'data/tournament_game_data'
-
-    # epoch lr - halved each time
-    #   1   0.1
-    #   2   0.05
-    #   3
-    #   4
-    #   5
-    #   6
 
     epochs = 2
 
@@ -184,13 +163,12 @@ if __name__ == '__main__':
                 print(match_path)
             # for match_path in ['data/tournament_game_data/00101 Wolfgang Bacher/MAT Files/001 Kristoffer Hoetzeneder -Wolfgang Bacher_12_2014.mat' for i in range(100)]:
                 # for match_path in ['data/tournament_game_data/00101 Wolfgang Bacher/MAT Files/001 Kristoffer Hoetzeneder -Wolfgang Bacher_12_2014.mat']:
-                model, n_games_trained, num_moves_by_result = train_on_match(lr, lambda_param,  match_path, model, train_log,
+                model, n_games_trained, num_moves_by_result = train_on_match(lr, match_path, model, train_log,
                                                                              n_games_trained, num_moves_by_result)
 
             train_log.close()
             train_log = open(output_path, 'a')
             torch.save(model.net, model_path_format.format(n_games_trained))
-        lr /= 2
 
     print(num_moves_by_result)
     s1 = ''

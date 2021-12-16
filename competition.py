@@ -12,8 +12,8 @@ print('Device: {}'.format(device))
 model1 = TD_Net_Wrapper(device=device)
 model2 = TD_Net_Wrapper(device=device)
 
-model_n1 = 112
-model_n2 = 217922
+model_n1 = 0
+model_n2 = 108961
 
 n_games = 100
 

@@ -12,7 +12,7 @@ def best_action(game, state, model):
         result_states = [torch.tensor(game.simulate_single_move(
             state, move)).reshape(-1).type(torch.FloatTensor)
             for move in legal_moves]
-        state_loader = DataLoader(result_states, batch_size=4)
+        state_loader = DataLoader(result_states, batch_size=1)
         if game.current_player_direction() == 1:
             move = legal_moves[torch.argmax(
                 model.get_predicted_move_vals(state_loader))]
@@ -66,25 +66,31 @@ if __name__ == '__main__':
     n_games = 1000
 
     # SARSA alg percent of time player explores vs picking optimal move
-    epsilon = 0.3
+    epsilon = 0.1
 
     lambda_param = 0.7
     lr = 0.1
 
     # modify these
-    is_new_output_path = False
+    is_new_output_path = True
     #output_path = 'data/training_results.csv'
     output_path = 'data/training_results.csv'
-    game_log_format_str = 'data/game_logs/game_{}_log.csv'
+    game_log_format_str = 'data/self_train_game_logs/game_{}_log.csv'
 
     is_new_model_path = False
     model_path_format = 'tournament_train_models/td_net_{}_games.pt'
-    n_games_trained = 217922
-    if is_new_model_path:
-        torch.save(model, model_path_format.format(n_games_trained))
-    else:
-        model.net = torch.load(
-            model_path_format.format(n_games_trained)).to(device)
+    n_games_trained = 108961
+    # if is_new_model_path:
+    #     torch.save(model, model_path_format.format(n_games_trained))
+    # else:
+    #     model.net = torch.load(
+    #         model_path_format.format(n_games_trained)).to(device)
+    model.net = torch.load(
+        model_path_format.format(n_games_trained)).to(device)
+
+    model_path_format = 'self_train_models/td_net_{}_games.pt'
+    n_games_trained = 0
+    torch.save(model, model_path_format.format(n_games_trained))
 
     if is_new_output_path:
         train_log = open(output_path, 'w')
@@ -103,9 +109,10 @@ if __name__ == '__main__':
         num_moves = 0
         game_loss = 0
         plys = 0
-        optimizer = torch.optim.SGD(model.net.parameters(), lr=lr,
-                                    momentum=lambda_param)
-        display_board(game, game.current_board())
+        optimizer = torch.optim.SGD(model.net.parameters(), lr=lr)
+        grads = [[torch.zeros((80, 198)), torch.zeros(80), torch.zeros((4, 80)), torch.zeros(4)]
+                 for i in range(4)]
+        # display_board(game, game.current_board())
         while(not game.game_is_over()):
             optimizer.zero_grad()
             print("ply: " + str(plys))
@@ -116,11 +123,9 @@ if __name__ == '__main__':
                 legal_moves = game.valid_actions()
                 move = legal_moves[np.random.choice(
                     range(len(legal_moves)))]
-                move_weight = 0
             else:
                 move = best_action(game, s, model)
-                move_weight = 1
-            display_board(game, game.current_board())
+            # display_board(game, game.current_board())
             # out = "Move: "
             # for m in move:
             # out += "({},{}) ".format(m.source(), m.destination())
@@ -132,13 +137,13 @@ if __name__ == '__main__':
             # print(s_1)
             if (game_copy.is_terminal_state(s_1)):
                 final_loss = model.train_final_example(torch.tensor(
-                    s, requires_grad=True).reshape(-1).type(torch.FloatTensor), torch.tensor(game_copy.terminal_value(s_1)).type(torch.FloatTensor), optimizer)
-                game_loss += move_weight * final_loss
-                num_moves += move_weight
+                    s, requires_grad=True).reshape(-1).type(torch.FloatTensor), torch.tensor(game_copy.terminal_value(s_1)).type(torch.FloatTensor), optimizer, grads)
+                game_loss += final_loss
             else:
-                game_loss += move_weight * model.train_single_example(torch.tensor(
-                    s, requires_grad=True).reshape(-1).type(torch.FloatTensor), torch.tensor(s_1).reshape(-1).type(torch.FloatTensor), optimizer)
-                num_moves += move_weight
+                loss, grads = model.train_single_example(torch.tensor(
+                    s, requires_grad=True).reshape(-1).type(torch.FloatTensor), torch.tensor(s_1).reshape(-1).type(torch.FloatTensor), optimizer, grads)
+                game_loss += loss
+            num_moves += 1
 
             # print(game_loss)
             # print("{},{}\n".format(game.current_player().color, game.move_to_str(move)))
